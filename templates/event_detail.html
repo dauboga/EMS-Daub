@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event-Details</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      width: 80%;
+      max-width: 800px;
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 20px;
+    }
+    .event-info, .event-description, .attendees {
+      margin-bottom: 20px;
+    }
+    .event-info div, .attendees div {
+      margin-bottom: 10px;
+    }
+    .attendees-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      list-style-type: none;
+      padding: 0;
+    }
+    .attendees-list li {
+      background-color: #e0e0e0;
+      padding: 10px;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 14px;
+      font-weight: bold;
+      color: #333;
+    }
+    .event-description p {
+      background-color: #f9f9f9;
+      padding: 15px;
+      border-radius: 8px;
+      line-height: 1.6;
+    }
+    .btn {
+      display: inline-block;
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      text-decoration: none;
+      text-align: center;
+      cursor: pointer;
+      margin: 5px;
+    }
+    .btn:hover {
+      background-color: #0056b3;
+    }
+    .btn-container {
+      text-align: center;
+    }
+    .btn-delete {
+      background-color: #dc3545;
+    }
+    .btn-delete:hover {
+      background-color: #c82333;
+    }
+    .btn-accept {
+      background-color: #28a745;
+    }
+    .btn-accept:hover {
+      background-color: #218838;
+    }
+    .btn-decline {
+      background-color: #ffc107;
+    }
+    .btn-decline:hover {
+      background-color: #e0a800;
+    }
+  </style>
+  <script>
+    function copyInvitationLink() {
+      const link = window.location.href;
+      navigator.clipboard.writeText(link).then(() => {
+        alert("Einladungslink kopiert: " + link);
+      }, (err) => {
+        console.error('Error copying text: ', err);
+      });
+    }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <h2>Event-Details</h2>
+    <div class="event-info">
+      <div><strong>Eventname:</strong> {{ event.title }}</div>
+      <div><strong>Datum:</strong> {{ event.date }}</div>
+      <div><strong>Ort:</strong> {{ event.location }}</div>
+    </div>
+    <div class="attendees">
+      <div><strong>Benutzer, die zugesagt haben:</strong></div>
+      <ul class="attendees-list">
+        {% for invitation in accepted_invitees %}
+          <li>{{ invitation.invitee.username }}</li>
+        {% endfor %}
+      </ul>
+      <div><strong>Benutzer, die abgesagt haben:</strong></div>
+      <ul class="attendees-list">
+        {% for invitation in declined_invitees %}
+          <li>{{ invitation.invitee.username }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="event-description">
+      <div><strong>Beschreibung:</strong></div>
+      <p>{{ event.description }}</p>
+    </div>
+    <div class="btn-container">
+      <a href="javascript:history.back()" class="btn">Zurück</a>
+      {% if request.user == event.creator %}
+        <a href="{% url 'delete_event' event.id %}" class="btn btn-delete" onclick="return confirm('Möchten Sie dieses Event wirklich löschen?');">Event löschen</a>
+        <button class="btn" onclick="copyInvitationLink()">Einladungslink kopieren</button>
+      {% endif %}
+      {% if invitation %}
+        {% if invitation.status == 'pending' %}
+          <a href="{% url 'change_invitation_status' event.id 'accepted' %}" class="btn btn-accept">Zusage</a>
+        {% elif invitation.status == 'accepted' %}
+          <a href="{% url 'change_invitation_status' event.id 'declined' %}" class="btn btn-decline">Absagen</a>
+        {% elif invitation.status == 'declined' %}
+          <a href="{% url 'change_invitation_status' event.id 'accepted' %}" class="btn btn-accept">Zusage</a>
+        {% endif %}
+      {% else %}
+        <form method="post">
+          {% csrf_token %}
+          <button type="submit" name="join_event" class="btn btn-accept">Event beitreten</button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>
